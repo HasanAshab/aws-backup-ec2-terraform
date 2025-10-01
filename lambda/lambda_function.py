@@ -89,10 +89,10 @@ def create_backups() -> List[str]:
                         ]
                     )
 
-                    logs.append(f"✅ Created snapshot {snapshot['SnapshotId']} for {instance_id}/{vol_id}")
+                    logs.append(f"Created snapshot {snapshot['SnapshotId']} for {instance_id}/{vol_id}")
 
                 except Exception as e:
-                    logs.append(f"❌ Failed to backup {instance_id}/{vol_id}: {str(e)}")
+                    logs.append(f"Failed to backup {instance_id}/{vol_id}: {str(e)}")
 
     return logs
 
@@ -124,12 +124,12 @@ def cleanup_old_snapshots() -> List[str]:
             if created_on and created_on < cutoff_date:
                 try:
                     ec2.delete_snapshot(SnapshotId=snapshot["SnapshotId"])
-                    logs.append(f"🗑️ Deleted old snapshot {snapshot['SnapshotId']} (created {created_on})")
+                    logs.append(f"Deleted old snapshot {snapshot['SnapshotId']} (created {created_on})")
                 except Exception as e:
-                    logs.append(f"❌ Failed to delete snapshot {snapshot['SnapshotId']}: {str(e)}")
+                    logs.append(f"Failed to delete snapshot {snapshot['SnapshotId']}: {str(e)}")
 
     except Exception as e:
-        logs.append(f"❌ Error during cleanup: {str(e)}")
+        logs.append(f"Error during cleanup: {str(e)}")
 
     return logs
 

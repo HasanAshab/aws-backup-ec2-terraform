@@ -354,25 +354,26 @@ Don't wait until disaster strikes to test your backups! Here's how to verify eve
 
 **Trigger a manual backup:**
 ```bash
-aws lambda invoke --function-name my-ec2-backup-production-backup response.json
-cat response.json
+aws lambda invoke --function-name my-backup-fn response.json
 ```
+![Invoke AWS Lambda](static/ss/invoke-output.png)
+
 
 **Check the logs:**
 1. Go to CloudWatch → Log groups
-2. Find `/aws/lambda/my-ec2-backup-production-backup`
+2. Find `/aws/lambda/my-backup-fn`
 3. Check the latest log stream
-![Logs](./static/ss/check-cloudwatch-logs.png)
+![Logs](static/ss/check-cloudwatch-logs.png)
 
 **Verify snapshots were created:**
 1. Go to EC2 → Snapshots
 2. Look for snapshots tagged with `CreatedBy=automated-backup`
-![Snapshots](./static/ss/verify-snapshots.png)
+![AWS EC2 Snapshots](static/ss/verify-snapshots.png)
 
 **Check S3 logs:**
 1. Go to S3 → your backup logs bucket
 2. Look in the `backup-logs/` folder for detailed reports
-![Logs](./static/ss/check-s3-logs.png)
+![AWS S3 Bucket](static/ss/check-s3-logs.png)
 
 ## Monitoring and Maintenance
 
@@ -447,9 +448,9 @@ You now have a production-ready EC2 backup system! Here are some enhancements yo
 
 **Multi-region backups:** Copy snapshots to another region for disaster recovery
 **Slack notifications:** Get notified when backups complete or fail
+
 **Backup verification:** Automatically test that snapshots are restorable
-**Custom retention policies:** Different retention periods for different instance types
-**Backup windows:** Only backup during specific time windows to reduce performance impact
+
 
 ## Wrapping Up
 

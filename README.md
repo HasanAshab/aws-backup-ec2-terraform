@@ -160,9 +160,10 @@ terraform destroy
 **⚠️ Warning**: This will delete all snapshots created by this system.
 
 ## 🚀 Future Improvements
+- Setup lifecycle policy in Log S3 Bucket for cost savings
 - Send SNS notifications for failed snapshots
 - Support multi-region backups
-- support multiple backup schedules
+- Support multiple backup schedules
 
 ## 🤝 Contributing
 
