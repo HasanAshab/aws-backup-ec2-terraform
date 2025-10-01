@@ -1,12 +1,13 @@
 # Automate EC2 Backups on AWS with Lambda, EventBridge, and Terraform
 
-*Stop losing sleep over manual backups. Here's how to build a bulletproof, serverless EC2 backup system that runs itself.*
+*Stop losing sleep over manual backups.*
+Here is how to set up **fully automated**, **cost-effective** EC2 backups using AWS _Lambda_, _EventBridge_, and _Terraform_ — no manual snapshots required.
 
----
 
-Picture this: It's 3 AM, your production server crashes, and you realize your last backup was... when exactly? We've all been there. Manual backups are like flossing – everyone knows they should do it, but somehow it never happens consistently.
+## Picture this:
+It's 3 AM, your production server crashes, and you realize your last backup was... when exactly? We've all been there. Manual backups are like flossing – everyone knows they should do it, but somehow it never happens consistently.
 
-Today, I'll show you how to build a completely automated EC2 backup system using AWS Lambda, EventBridge, and Terraform. By the end of this guide, you'll have a system that:
+Today, I'll show you how to build a completely automated EC2 backup system. By the end of this guide, you'll have a system that:
 
 - Backs up your EC2 instances every night automatically
 - Cleans up old snapshots to save costs
@@ -35,6 +36,8 @@ Our backup system has four main components:
 2. **Lambda Function**: The workhorse that creates and manages snapshots
 3. **EC2 Tags**: Simple way to mark which instances need backing up
 4. **S3 Bucket**: Stores backup logs for auditing
+
+![EC2 Backup Architecture](./static/images/architecture.png)
 
 Here's how they work together:
 
@@ -70,8 +73,15 @@ ec2-backup-automation/
     └── lambda_policy.json    # IAM permissions
 ```
 
-Create this structure on your machine:
+You can either [clone](https://github.com/HasanAshab/aws-ec2-backup-lambda) the complete project or create the structure manually:
 
+**Option 1: Clone the complete project (recommended):**
+```bash
+git clone https://github.com/HasanAshab/aws-ec2-backup-lambda.git
+cd ec2-backup-automation
+```
+
+**Option 2: Create the structure manually:**
 ```bash
 mkdir ec2-backup-automation
 cd ec2-backup-automation
@@ -85,159 +95,14 @@ The Lambda function is where the magic happens. It finds EC2 instances tagged fo
 Create `lambda/lambda_function.py`:
 
 ```python
-import os
-import boto3
-import datetime
-from typing import List, Dict
-
-# Initialize AWS clients
-ec2 = boto3.client("ec2")
-s3 = boto3.client("s3")
-
-# Environment variables
-RETENTION_DAYS = int(os.environ["RETENTION_DAYS"])
-LOG_BUCKET = os.environ["LOG_BUCKET"]
-
+# Main Lambda handler
 def lambda_handler(event, context):
-    """
-    Main Lambda handler - creates backups and cleans up old snapshots
-    """
-    logs = []
-
-    try:
-        # Step 1: Create new backups
-        backup_logs = create_backups()
-        logs.extend(backup_logs)
-
-        # Step 2: Clean up old snapshots
-        cleanup_logs = cleanup_old_snapshots()
-        logs.extend(cleanup_logs)
-
-        # Step 3: Save logs to S3
-        save_logs_to_s3(logs)
-
-        return {
-            'statusCode': 200,
-            'body': f'Backup completed successfully. {len(backup_logs)} snapshots created.'
-        }
-
-    except Exception as e:
-        error_msg = f"Backup failed: {str(e)}"
-        logs.append(error_msg)
-        save_logs_to_s3(logs)
-        raise
-
-def create_backups() -> List[str]:
-    """
-    Find EC2 instances tagged for backup and create snapshots
-    """
-    logs = []
-
-    # Find all instances tagged with Backup=true
-    reservations = ec2.describe_instances(
-        Filters=[{"Name": "tag:Backup", "Values": ["true"]}]
-    ).get("Reservations", [])
-
-    if not reservations:
-        logs.append("No instances found with Backup=true tag")
-        return logs
-
-    for reservation in reservations:
-        for instance in reservation["Instances"]:
-            instance_id = instance["InstanceId"]
-
-            # Skip terminated instances
-            if instance["State"]["Name"] == "terminated":
-                continue
-
-            # Create snapshots for each EBS volume
-            for volume in instance.get("BlockDeviceMappings", []):
-                if "Ebs" not in volume:
-                    continue
-
-                vol_id = volume["Ebs"]["VolumeId"]
-
-                try:
-                    # Create the snapshot
-                    snapshot = ec2.create_snapshot(
-                        VolumeId=vol_id,
-                        Description=f"Automated backup of {instance_id}, volume {vol_id}"
-                    )
-
-                    # Tag the snapshot for identification and cleanup
-                    ec2.create_tags(
-                        Resources=[snapshot["SnapshotId"]],
-                        Tags=[
-                            {"Key": "Name", "Value": f"backup-{instance_id}-{vol_id}"},
-                            {"Key": "InstanceId", "Value": instance_id},
-                            {"Key": "VolumeId", "Value": vol_id},
-                            {"Key": "CreatedBy", "Value": "automated-backup"},
-                            {"Key": "CreatedOn", "Value": datetime.date.today().isoformat()}
-                        ]
-                    )
-
-                    logs.append(f"✅ Created snapshot {snapshot['SnapshotId']} for {instance_id}/{vol_id}")
-
-                except Exception as e:
-                    logs.append(f"❌ Failed to backup {instance_id}/{vol_id}: {str(e)}")
-
-    return logs
-
-def cleanup_old_snapshots() -> List[str]:
-    """
-    Delete snapshots older than RETENTION_DAYS
-    """
-    logs = []
-    cutoff_date = datetime.date.today() - datetime.timedelta(days=RETENTION_DAYS)
-
-    try:
-        # Find snapshots created by our backup system
-        snapshots = ec2.describe_snapshots(
-            OwnerIds=['self'],
-            Filters=[
-                {"Name": "tag:CreatedBy", "Values": ["automated-backup"]},
-                {"Name": "status", "Values": ["completed"]}
-            ]
-        )["Snapshots"]
-
-        for snapshot in snapshots:
-            # Check if snapshot is old enough to delete
-            created_on = None
-            for tag in snapshot.get("Tags", []):
-                if tag["Key"] == "CreatedOn":
-                    created_on = datetime.datetime.strptime(tag["Value"], "%Y-%m-%d").date()
-                    break
-
-            if created_on and created_on < cutoff_date:
-                try:
-                    ec2.delete_snapshot(SnapshotId=snapshot["SnapshotId"])
-                    logs.append(f"🗑️ Deleted old snapshot {snapshot['SnapshotId']} (created {created_on})")
-                except Exception as e:
-                    logs.append(f"❌ Failed to delete snapshot {snapshot['SnapshotId']}: {str(e)}")
-
-    except Exception as e:
-        logs.append(f"❌ Error during cleanup: {str(e)}")
-
-    return logs
-
-def save_logs_to_s3(logs: List[str]):
-    """
-    Save execution logs to S3 for auditing
-    """
-    timestamp = datetime.datetime.now().isoformat()
-    log_content = f"EC2 Backup Report - {timestamp}\n" + "="*50 + "\n\n"
-    log_content += "\n".join(logs)
-
-    try:
-        s3.put_object(
-            Bucket=LOG_BUCKET,
-            Key=f"backup-logs/{timestamp[:10]}/backup-{timestamp}.txt",
-            Body=log_content,
-            ContentType="text/plain"
-        )
-    except Exception as e:
-        print(f"Failed to save logs to S3: {str(e)}")
+    create_backups()
+    cleanup_old_snapshots()
+    save_logs_to_s3()
 ```
+_Full code available [here](https://github.com/HasanAshab/aws-ec2-backup-lambda/blob/main/main.tf)_
+
 ## Step 3: IAM Permissions (Security Done Right)
 
 Our Lambda needs specific permissions to do its job. Create `templates/lambda_policy.json`:
@@ -280,7 +145,6 @@ Our Lambda needs specific permissions to do its job. Create `templates/lambda_po
     }
   ]
 }
-
 ```
 
 This follows the principle of least privilege – the Lambda can only do what it needs to do, nothing more.
@@ -498,14 +362,17 @@ cat response.json
 1. Go to CloudWatch → Log groups
 2. Find `/aws/lambda/my-ec2-backup-production-backup`
 3. Check the latest log stream
+![Logs](./static/ss/check-cloudwatch-logs.png)
 
 **Verify snapshots were created:**
 1. Go to EC2 → Snapshots
 2. Look for snapshots tagged with `CreatedBy=automated-backup`
+![Snapshots](./static/ss/verify-snapshots.png)
 
 **Check S3 logs:**
 1. Go to S3 → your backup logs bucket
 2. Look in the `backup-logs/` folder for detailed reports
+![Logs](./static/ss/check-s3-logs.png)
 
 ## Monitoring and Maintenance
 
@@ -596,7 +463,7 @@ The key benefits of this approach:
 - **Auditable**: Complete logs of every backup operation
 - **Reliable**: Built on AWS managed services
 
-Remember: The best backup system is the one that actually runs. Manual backups fail because humans forget. Automated backups succeed because computers don't.
+**Remember**: Manual backups fail; automated backups succeed.
 
 Your future self (and your boss) will thank you when that inevitable "we need to restore from backup" moment arrives, and you can confidently say: "No problem, we have automated backups running every night."
 
