@@ -60,6 +60,7 @@ module "lambda_function" {
   environment_variables = {
     ENVIRONMENT    = var.environment
     LOG_BUCKET = module.log_bucket.s3_bucket_id
+    RETENTION_DAYS = var.retention_days
   }
 }
 
@@ -84,7 +85,7 @@ module "eventbridge" {
   rules = {
     crons = {
       description         = "Daily EC2 backup"
-      schedule_expression = "cron(0 0 * * ? *)"
+      schedule_expression = var.backup_schedule
     }
   }
   targets = {
