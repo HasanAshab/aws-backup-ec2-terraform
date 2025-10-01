@@ -3,6 +3,17 @@
 # For this example, we will create 3 instances,
 # 2 of which will be backed up
 
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
 module "ec2_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   for_each = {
@@ -12,9 +23,8 @@ module "ec2_instance" {
   }
 
   name = "instance-${each.key}"
-
   instance_type = "t3.micro"
-  create_security_group = false
+  subnet_id = data.aws_subnets.default.ids[0]
   monitoring    = false
 
   tags = {
@@ -38,13 +48,14 @@ module "lambda_function" {
   policy_json = templatefile("${path.module}/templates/lambda_policy.json", {
     log_bucket_arn = module.log_bucket.s3_bucket_arn
   })
-  # allowed_triggers = {
-  #   apigw = {
-  #     service    = "apigateway"
-  #     source_arn = "${module.api_gateway.api_execution_arn}/*/*"
-  #   }
-  # }
+  allowed_triggers = {
+    eventbridge = {
+      service    = "events"
+      source_arn = module.eventbridge.eventbridge_rule_arns["crons"]
+    }
+  }
 
+  create_current_version_allowed_triggers = false
   artifacts_dir = "${path.root}/.terraform/lambda-builds/"
   environment_variables = {
     ENVIRONMENT    = var.environment
@@ -61,4 +72,27 @@ module "log_bucket" {
 
   bucket = "${local.project_name}-log-${var.environment}"
   force_destroy = true
+}
+
+
+### EventBridge ###
+# EventBridge to trigger backups
+module "eventbridge" {
+  source = "terraform-aws-modules/eventbridge/aws"
+
+  create_bus = false
+  rules = {
+    crons = {
+      description         = "Daily EC2 backup"
+      schedule_expression = "cron(0 0 * * ? *)"
+    }
+  }
+  targets = {
+    crons = [
+      {
+        name = "ec2-backup-lambda"
+        arn  = module.lambda_function.lambda_function_arn
+      }
+    ]
+  }
 }
