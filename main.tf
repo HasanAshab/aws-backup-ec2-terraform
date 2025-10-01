@@ -1,4 +1,3 @@
-
 ### Example EC2 instances ###
 # The "Backup" tag is used to identify instances that should be backed up
 # For this example, we will create 3 instances,
@@ -26,12 +25,40 @@ module "ec2_instance" {
 
 ### Lambda ###
 # Lambda function to back up EC2 instances
-module "lambda" {
-  source = "./modules/lambda"
+module "lambda_function" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "8.1.0"
 
-  environment = var.environment
-  name_prefix = local.project_name
-
-  source_path = "${path.root}/lambda"
+  function_name = "${local.project_name}-backup-${var.environment}"
+  source_path = "${path.module}/lambda/lambda_function.py"
   handler = "lambda_function.lambda_handler"
+  runtime = "python3.12"
+
+  attach_policy_json = true
+  policy_json = templatefile("${path.module}/templates/lambda_policy.json", {
+    log_bucket_arn = module.log_bucket.s3_bucket_arn
+  })
+  # allowed_triggers = {
+  #   apigw = {
+  #     service    = "apigateway"
+  #     source_arn = "${module.api_gateway.api_execution_arn}/*/*"
+  #   }
+  # }
+
+  artifacts_dir = "${path.root}/.terraform/lambda-builds/"
+  environment_variables = {
+    ENVIRONMENT    = var.environment
+    LOG_BUCKET = module.log_bucket.s3_bucket_id
+  }
+}
+
+
+### Log bucket ###
+# S3 bucket for storing backup logs
+module "log_bucket" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "5.5.0"
+
+  bucket = "${local.project_name}-log-${var.environment}"
+  force_destroy = true
 }
