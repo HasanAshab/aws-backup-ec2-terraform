@@ -20,13 +20,10 @@ The best part? It costs pennies to run and takes about 15 minutes to set up.
 
 Before we dive in, let's talk about why this serverless approach beats traditional backup solutions:
 
-**Cost-Effective**: You only pay for what you use. No expensive backup software licenses or dedicated servers.
-
-**Reliable**: AWS manages the infrastructure. No more "backup server is down" emergencies.
-
-**Scalable**: Works whether you have 5 instances or 500. The system scales automatically.
-
-**Auditable**: Every backup operation is logged and tracked.
+* **Cost-Effective**: You only pay for what you use. No expensive backup software licenses or dedicated servers.
+* **Reliable**: AWS manages the infrastructure. No more "backup server is down" emergencies.
+* **Scalable**: Works whether you have 5 instances or 500. The system scales automatically.
+* **Auditable**: Every backup operation is logged and tracked.
 
 ## The Architecture (Keep It Simple)
 
@@ -37,7 +34,7 @@ Our backup system has four main components:
 3. **EC2 Tags**: Simple way to mark which instances need backing up
 4. **S3 Bucket**: Stores backup logs for auditing
 
-![EC2 Backup Architecture](./static/images/architecture.png)
+![EC2 Backup Architecture](https://raw.githubusercontent.com/HasanAshab/aws-ec2-backup-lambda/main/static/images/architecture.png)
 
 Here's how they work together:
 
@@ -356,24 +353,24 @@ Don't wait until disaster strikes to test your backups! Here's how to verify eve
 ```bash
 aws lambda invoke --function-name my-backup-fn response.json
 ```
-![Invoke AWS Lambda](static/ss/invoke-output.png)
+![Invoke AWS Lambda](https://raw.githubusercontent.com/HasanAshab/aws-ec2-backup-lambda/main/static/ss/invoke-output.png)
 
 
 **Check the logs:**
 1. Go to CloudWatch → Log groups
 2. Find `/aws/lambda/my-backup-fn`
 3. Check the latest log stream
-![Logs](static/ss/check-cloudwatch-logs.png)
+![Logs](https://raw.githubusercontent.com/HasanAshab/aws-ec2-backup-lambda/main/static/ss/check-cloudwatch-logs.png)
 
 **Verify snapshots were created:**
 1. Go to EC2 → Snapshots
 2. Look for snapshots tagged with `CreatedBy=automated-backup`
-![AWS EC2 Snapshots](static/ss/verify-snapshots.png)
+![AWS EC2 Snapshots](https://raw.githubusercontent.com/HasanAshab/aws-ec2-backup-lambda/main/static/ss/verify-snapshots.png)
 
 **Check S3 logs:**
 1. Go to S3 → your backup logs bucket
 2. Look in the `backup-logs/` folder for detailed reports
-![AWS S3 Bucket](static/ss/check-s3-logs.png)
+![AWS S3 Bucket](https://raw.githubusercontent.com/HasanAshab/aws-ec2-backup-lambda/main/static/ss/check-s3-logs.png)
 
 ## Monitoring and Maintenance
 
@@ -446,10 +443,9 @@ Schedule monthly restore tests to ensure your backups actually work:
 
 You now have a production-ready EC2 backup system! Here are some enhancements you might consider:
 
-**Multi-region backups:** Copy snapshots to another region for disaster recovery
-**Slack notifications:** Get notified when backups complete or fail
-
-**Backup verification:** Automatically test that snapshots are restorable
+- **Multi-region backups:** Copy snapshots to another region for disaster recovery
+- **Slack notifications:** Get notified when backups complete or fail
+- **Backup verification:** Automatically test that snapshots are restorable
 
 
 ## Wrapping Up
@@ -474,7 +470,7 @@ Now go tag those instances and sleep better knowing your data is protected!
 
 ## Contact
 
-*Have questions about this setup? Found a bug in the code? Drop a comment below
+*Have questions about this setup? Found a bug in the code? Drop a comment below*
 
 or reach out:
 * **Website**: [hasan-ashab](https://hasan-ashab.vercel.app/)
