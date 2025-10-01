@@ -34,7 +34,7 @@ Our backup system has four main components:
 3. **EC2 Tags**: Simple way to mark which instances need backing up
 4. **S3 Bucket**: Stores backup logs for auditing
 
-![EC2 Backup Architecture](https://raw.githubusercontent.com/HasanAshab/aws-ec2-backup-lambda/main/static/images/architecture.png)
+![AWS EC2 Automated Backup](https://raw.githubusercontent.com/HasanAshab/aws-ec2-backup-lambda/main/static/images/architecture.png)
 
 Here's how they work together:
 
@@ -151,24 +151,7 @@ This follows the principle of least privilege – the Lambda can only do what it
 Now let's tie everything together with Terraform. Create `variables.tf`:
 
 ```hcl
-variable "region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "environment" {
-  description = "Environment name (dev, staging, prod)"
-  type        = string
-  default     = "dev"
-}
-
-variable "project_name" {
-  description = "Project name for resource naming"
-  type        = string
-  default     = "ec2-backup"
-}
-
+# ...
 variable "backup_schedule" {
   description = "EventBridge cron expression for backup schedule"
   type        = string
@@ -314,22 +297,7 @@ module "ec2_instance" {
 This creates three test instances in your default VPC. Two are tagged for backup (`Backup=true`) and one isn't (`Backup=false`). This lets you see the system in action without affecting your existing instances.
 
 
-## Step 5: Configuration and Deployment
-
-Create your `terraform.tfvars` file with your specific settings:
-
-```hcl
-region       = "us-east-1"
-environment  = "production"
-project_name = "my-ec2-backup"
-
-# Backup at 2 AM UTC every day
-backup_schedule = "cron(0 2 * * ? *)"
-
-# Keep snapshots for 7 days
-retention_days = 7
-```
-
+## Step 5: Deployment
 Now deploy everything:
 
 ```bash
@@ -406,7 +374,7 @@ Monitor your snapshot costs and adjust retention as needed:
 ```bash
 # Check snapshot costs
 aws ce get-cost-and-usage \
-  --time-period Start=2024-01-01,End=2024-01-31 \
+  --time-period Start=2025-01-01,End=2026-01-31 \
   --granularity MONTHLY \
   --metrics BlendedCost \
   --group-by Type=DIMENSION,Key=SERVICE
