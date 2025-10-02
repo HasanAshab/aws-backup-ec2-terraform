@@ -3,6 +3,21 @@
 *Stop losing sleep over manual backups.*
 Here is how to set up **fully automated**, **cost-effective** EC2 backups using AWS _Lambda_, _EventBridge_, and _Terraform_ — no manual snapshots required.
 
+## Jump To:
+- [Picture This](#picture-this)
+- [Why This Approach](#why-this-approach-works)
+- [The Architecture](#the-architecture-keep-it-simple)
+- [Requirements](#what-youll-need)
+- [Step 1: Project Structure](#step-1-project-structure)
+- [Step 2: Lambda Function](#step-2-the-lambda-function-the-heart-of-the-system)
+- [Step 3: IAM Permissions](#step-3-iam-permissions-security-done-right)
+- [Step 4: Terraform](#step-4-terraform-configuration)
+- [Step 5: Deployment](#step-5-deployment)
+- [Step 6: Testing](#step-6-test-your-backup-system)
+- [Monitoring and Maintenance](#monitoring-and-maintenance)
+- [Troubleshooting](#troubleshooting-common-issues)
+- [Contact](#contact)
+
 
 ## Picture this:
 It's 3 AM, your production server crashes, and you realize your last backup was... when exactly? We've all been there. Manual backups are like flossing – everyone knows they should do it, but somehow it never happens consistently.
@@ -48,7 +63,7 @@ No complex orchestration, no fragile dependencies. Just simple, reliable automat
 
 Before we start, make sure you have:
 
-- AWS CLI configured with admin permissions
+- AWS CLI configured
 - Terraform installed (version 1.0 or later)
 - Basic familiarity with AWS services
 - About 15 minutes of your time

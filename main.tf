@@ -15,16 +15,16 @@ data "aws_subnets" "default" {
 }
 
 module "ec2_instance" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
+  source = "terraform-aws-modules/ec2-instance/aws"
   for_each = {
     "1" = "true"
     "2" = "true"
     "3" = "false"
   }
 
-  name = "instance-${each.key}"
+  name          = "instance-${each.key}"
   instance_type = "t3.micro"
-  subnet_id = data.aws_subnets.default.ids[0]
+  subnet_id     = data.aws_subnets.default.ids[0]
   monitoring    = false
 
   tags = {
@@ -40,9 +40,9 @@ module "lambda_function" {
   version = "8.1.0"
 
   function_name = "${local.project_name}-backup-${var.environment}"
-  source_path = "${path.module}/lambda/lambda_function.py"
-  handler = "lambda_function.lambda_handler"
-  runtime = "python3.12"
+  source_path   = "${path.module}/lambda/lambda_function.py"
+  handler       = "lambda_function.lambda_handler"
+  runtime       = "python3.12"
 
   attach_policy_json = true
   policy_json = templatefile("${path.module}/templates/lambda_policy.json", {
@@ -56,10 +56,10 @@ module "lambda_function" {
   }
 
   create_current_version_allowed_triggers = false
-  artifacts_dir = "${path.root}/.terraform/lambda-builds/"
+  artifacts_dir                           = "${path.root}/.terraform/lambda-builds/"
   environment_variables = {
     ENVIRONMENT    = var.environment
-    LOG_BUCKET = module.log_bucket.s3_bucket_id
+    LOG_BUCKET     = module.log_bucket.s3_bucket_id
     RETENTION_DAYS = var.retention_days
   }
 }
@@ -71,7 +71,7 @@ module "log_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.5.0"
 
-  bucket = "${local.project_name}-log-${var.environment}"
+  bucket        = "${local.project_name}-log-${var.environment}"
   force_destroy = true
 }
 
