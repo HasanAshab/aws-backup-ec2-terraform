@@ -151,6 +151,8 @@ resource "aws_backup_selection" "ec2_backup" {
 
 That's it. **50 lines of Terraform vs 300+ lines for a custom solution.**
 
+Check the source code [here](https://github.com/hasanashab/aws-backup-ec2-terraform).
+
 ## Benefits Comparison
 
 Let me show you the concrete benefits of switching:
