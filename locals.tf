@@ -1,3 +1,3 @@
 locals {
-  project_name = "ec2-auto-backup"
+  project_name = "aws-backup-solution"
 }

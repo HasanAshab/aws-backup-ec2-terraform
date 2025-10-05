@@ -11,13 +11,13 @@ variable "aws_region" {
 }
 
 variable "backup_schedule" {
-  description = "EventBridge cron expression"
+  description = "AWS Backup cron expression for daily backups"
   type        = string
-  default     = "cron(0 0 * * ? *)"
+  default     = "cron(0 2 * * ? *)"  # Daily at 2 AM UTC
 }
 
 variable "retention_days" {
-  description = "Snapshot retention period"
+  description = "Backup retention period in days"
   type        = number
   default     = 7
 }

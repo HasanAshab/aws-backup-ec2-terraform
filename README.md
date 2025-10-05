@@ -1,34 +1,33 @@
-# 🔄 EC2 Backup Automation
+# 🔄 AWS Backup Solution for EC2
 
-> **Automated, serverless EC2 backups using AWS Lambda, EventBridge, and Terraform**
+> **Enterprise-grade EC2 backups using AWS Backup service and Terraform**
 
 [![Terraform](https://img.shields.io/badge/Terraform-1.0+-623CE4?logo=terraform&logoColor=white)](https://terraform.io)
-[![AWS](https://img.shields.io/badge/AWS-Lambda%20%7C%20EC2%20%7C%20S3-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://python.org)
+[![AWS](https://img.shields.io/badge/AWS-Backup%20%7C%20EC2%20%7C%20KMS-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com)
 
-This project creates a fully-managed backup system that snapshots tagged EC2 instances nightly, retains snapshots for 7 days, and stores logs in S3 — **zero manual intervention required**.
+This project leverages AWS Backup service to create a fully-managed, enterprise-grade backup solution for EC2 instances with automated scheduling, retention policies, and encryption — **zero custom code required**.
 
 ## ✨ Features
 
-- 🌙 **Nightly automatic backups** of EC2 instances tagged `Backup=true`
-- 🗓️ **7-day retention policy** with automatic cleanup
-- ⚡ **Fully serverless** and AWS-native (Lambda + EventBridge)
-- 📊 **Centralized logging** stored in S3 bucket
+- 🌙 **Automated daily backups** of EC2 instances tagged `BackupPlan=daily-backup`
+- 🗓️ **Configurable retention policy** with automatic cleanup
+- 🔐 **KMS encryption** for backup data at rest
+- 🏛️ **AWS Backup service** - fully managed, no custom code
+- 📊 **Built-in monitoring** and reporting via AWS Backup console
 - 🧩 **Modular Terraform** structure for easy extension
-- 🔒 **Least-privilege IAM** roles and policies
+- 🔒 **Service-linked IAM roles** with AWS managed policies
 
 ## 🏗️ Architecture
 
-![Architecture Diagram](static/images/architecture.png)
-
-The backup system follows a simple, event-driven architecture:
+The backup solution uses AWS Backup service for a fully managed approach:
 
 | Component | Purpose |
 |-----------|---------|
-| **EventBridge Rule** | Triggers Lambda on daily cron schedule |
-| **Lambda Function** | Executes snapshot creation and cleanup logic |
-| **S3 Bucket** | Stores Lambda execution logs and artifacts |
-| **EC2 Instances** | Only instances tagged `Backup=true` are processed |
+| **AWS Backup Plan** | Defines backup schedule and retention rules |
+| **AWS Backup Vault** | Secure storage for backup recovery points |
+| **KMS Key** | Encrypts backup data at rest |
+| **IAM Service Role** | Allows AWS Backup to access EC2 resources |
+| **EC2 Instances** | Only instances tagged `BackupPlan=daily-backup` are backed up |
 
 ## 🚀 Quick Start
 
@@ -36,24 +35,15 @@ The backup system follows a simple, event-driven architecture:
 
 - AWS CLI configured with appropriate permissions
 - Terraform >= 1.0
-- Python 3.12 (for Lambda function)
 
 ### 1️⃣ Clone & Setup
 
 ```bash
 git clone <repository-url>
-cd ec2-backup-iac
+cd aws-backup-solution
 ```
 
-### 2️⃣ Build Lambda Package
-
-```bash
-cd lambda
-./build.sh
-cd ..
-```
-
-### 3️⃣ Configure Variables
+### 2️⃣ Configure Variables
 
 Create `terraform.tfvars`:
 
@@ -63,7 +53,7 @@ environment  = "production"
 project_name = "ec2-backup"
 ```
 
-### 4️⃣ Deploy Infrastructure
+### 3️⃣ Deploy Infrastructure
 
 ```bash
 terraform init
@@ -72,10 +62,11 @@ terraform apply
 ```
 
 **What gets created:**
-- ✅ IAM Role with least-privilege permissions
-- ✅ S3 Bucket for logs and artifacts
-- ✅ Lambda Function (Python 3.12)
-- ✅ EventBridge Rule (daily cron trigger)
+- ✅ AWS Backup Plan with daily schedule
+- ✅ AWS Backup Vault with KMS encryption
+- ✅ IAM Service Role with AWS managed policies
+- ✅ KMS Key for backup encryption
+- ✅ Backup Selection targeting tagged resources
 - ✅ Example EC2 instances with backup tags
 
 ## 📋 Usage
@@ -85,24 +76,23 @@ terraform apply
 Simply tag any EC2 instance you want to backup:
 
 ```
-Key: Backup
-Value: true
+Key: BackupPlan
+Value: daily-backup
 ```
 
 ### Backup Process
 
-1. **Daily Trigger**: EventBridge triggers Lambda at midnight UTC
-2. **Instance Discovery**: Lambda finds all instances tagged `Backup=true`
-3. **Snapshot Creation**: Creates EBS snapshots for each instance
-4. **Tagging**: Tags snapshots with metadata (instance ID, date, retention)
-5. **Cleanup**: Removes snapshots older than 7 days
-6. **Logging**: Writes execution logs to S3
+1. **Scheduled Trigger**: AWS Backup executes based on the cron schedule (default: 2 AM UTC)
+2. **Resource Discovery**: AWS Backup finds all resources tagged `BackupPlan=daily-backup`
+3. **Backup Creation**: Creates encrypted backups in the backup vault
+4. **Lifecycle Management**: Automatically deletes backups after retention period
+5. **Monitoring**: Built-in AWS Backup monitoring and notifications
 
 ### Monitor Backups
 
-- **CloudWatch Logs**: Lambda execution logs
-- **S3 Bucket**: Detailed backup reports
-- **EC2 Console**: View created snapshots
+- **AWS Backup Console**: View backup jobs, recovery points, and metrics
+- **CloudWatch**: AWS Backup service metrics and alarms
+- **AWS Config**: Compliance monitoring for backup policies
 
 ## 🛠️ Configuration
 ### Terraform Variables
@@ -114,39 +104,42 @@ Value: true
 | `backup_schedule` | string | `cron(0 2 * * ? *)` | EventBridge cron expression |
 | `retention_days` | number | `7` | Snapshot retention period |
 
-## 📦 Terraform Modules
+## 📦 Terraform Resources
 
-This project uses official AWS Terraform modules:
+This project uses native AWS Terraform resources:
 
-- **[terraform-aws-modules/s3-bucket/aws](https://registry.terraform.io/modules/terraform-aws-modules/s3-bucket/aws)** - S3 bucket with security defaults
-- **[terraform-aws-modules/lambda/aws](https://registry.terraform.io/modules/terraform-aws-modules/lambda/aws)** - Lambda function with IAM role
-- **[terraform-aws-modules/eventbridge/aws](https://registry.terraform.io/modules/terraform-aws-modules/eventbridge/aws)** - EventBridge rules and targets
+- **aws_backup_plan** - Defines backup schedule and lifecycle rules
+- **aws_backup_vault** - Secure storage for backup recovery points
+- **aws_backup_selection** - Specifies which resources to backup
+- **aws_kms_key** - Encryption key for backup data
+- **aws_iam_role** - Service role for AWS Backup
 - **[terraform-aws-modules/ec2-instance/aws](https://registry.terraform.io/modules/terraform-aws-modules/ec2-instance/aws)** - Example EC2 instances
 
 ## 🔧 Troubleshooting
 
 ### Common Issues
 
-**Lambda not triggering?**
-- Check EventBridge rule is enabled
-- Verify `aws_lambda_permission` resource exists
-- Review CloudWatch Logs for errors
+**Backups not running?**
+- Check AWS Backup console for job status
+- Verify backup plan is active
+- Ensure resources have correct tags (`BackupPlan=daily-backup`)
 
-**Snapshots not created?**
-- Ensure EC2 instances have `Backup=true` tag
-- Check Lambda IAM permissions
-- Verify instances are in the same region
+**Backup jobs failing?**
+- Review AWS Backup job details in console
+- Check IAM service role permissions
+- Verify KMS key permissions for encryption
 
-**Permission errors?**
-- Review IAM policy in `templates/lambda_policy.json`
-- Ensure AWS credentials have sufficient permissions
+**Resources not being backed up?**
+- Ensure correct tag key/value (`BackupPlan=daily-backup`)
+- Check backup selection configuration
+- Verify resources are in the same region as backup plan
 
-### Debug Mode
+### Monitor Backup Status
 
-Enable debug logging:
+Check backup status via AWS CLI:
 
 ```bash
-terraform apply -var="log_level=DEBUG"
+aws backup list-backup-jobs --by-backup-vault-name <vault-name>
 ```
 
 ## 🧹 Cleanup
@@ -157,13 +150,13 @@ Remove all resources:
 terraform destroy
 ```
 
-**⚠️ Warning**: This will delete all snapshots created by this system.
+**⚠️ Warning**: This will delete the backup vault and all recovery points stored within it.
 
 ## 🚀 Future Improvements
-- Setup lifecycle policy in Log S3 Bucket for cost savings
-- Send SNS notifications for failed snapshots
-- Support multi-region backups
-- Support multiple backup schedules
+- Add SNS notifications for backup job failures
+- Implement cross-region backup replication
+- Add support for multiple backup plans (hourly, weekly, monthly)
+- Integrate with AWS Organizations for centralized backup management
 
 ## 🤝 Contributing
 
