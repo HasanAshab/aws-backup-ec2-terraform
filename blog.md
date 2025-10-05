@@ -57,6 +57,7 @@ Let me break down why AWS Backup is objectively better than custom Lambda soluti
 If you're currently using a custom Lambda solution, here's how to migrate to AWS Backup:
 
 ### **Before: Custom Lambda Architecture**
+![Lambda](https://github.com/hasan-ashab/aws-backup-ec2-terraform/blob/main/old-architecture.png?raw=true)
 ```
 EventBridge → Lambda Function → EC2 API calls → S3 Logging
 ```
@@ -206,14 +207,6 @@ Use the Terraform configuration above to create:
 3. Verify recovery points in the AWS Backup console
 4. Test a restore operation
 
-### 4. Clean Up Old Resources
-Once you've verified AWS Backup is working:
-```bash
-# Remove the old Lambda-based solution
-terraform destroy -target=module.lambda_function
-terraform destroy -target=module.eventbridge
-terraform destroy -target=module.log_bucket
-```
 
 ## Real-World Results
 
