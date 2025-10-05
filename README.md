@@ -19,6 +19,7 @@ This project leverages AWS Backup service to create a fully-managed, enterprise-
 
 ## 🏗️ Architecture
 
+![AWS Backup](static/images/architecture.png)
 The backup solution uses AWS Backup service for a fully managed approach:
 
 | Component | Purpose |

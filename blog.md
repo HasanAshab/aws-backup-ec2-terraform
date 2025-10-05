@@ -57,7 +57,7 @@ Let me break down why AWS Backup is objectively better than custom Lambda soluti
 If you're currently using a custom Lambda solution, here's how to migrate to AWS Backup:
 
 ### **Before: Custom Lambda Architecture**
-![Lambda](https://github.com/hasan-ashab/aws-backup-ec2-terraform/blob/main/old-architecture.png?raw=true)
+![Lambda](https://raw.githubusercontent.com/hasanashab/aws-backup-ec2-terraform/main/static/images/old-architecture.png)
 ```
 EventBridge → Lambda Function → EC2 API calls → S3 Logging
 ```
@@ -83,6 +83,8 @@ AWS Backup simplifies everything:
 2. **Backup Vault**: Secure, encrypted storage for recovery points
 3. **Backup Selection**: Tag-based resource targeting
 4. **Service Role**: AWS-managed permissions
+
+![AWS Backup](https://raw.githubusercontent.com/hasanashab/aws-backup-ec2-terraform/main/static/images/architecture.png)
 
 That's it. Four components instead of a dozen.
 
